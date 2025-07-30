@@ -90,8 +90,8 @@ class SamplePoints(BlockwiseTask):
             supervoxels = self.svids.array("r")
 
         def process_block(block: Block):
-            l = data[block.write_roi.to_slices()]
-            l = np.array(l).squeeze()
+            labels = data[block.write_roi.to_slices()]
+            labels = np.array(labels).squeeze()
 
             offset = block.write_roi.get_begin()
 
@@ -101,7 +101,7 @@ class SamplePoints(BlockwiseTask):
             else:
                 s = None
 
-            self.sample_pc_in_block(block, l, s, offset)
+            self.sample_pc_in_block(block, labels, s, offset)
 
         yield process_block
 

@@ -1,7 +1,7 @@
 # CLI for Point Cloud Sampling
 
 ```
-pip install nps
+pip install nps-cli
 ````
 ### Get started
 
