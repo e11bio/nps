@@ -8,22 +8,19 @@ version = "0.1.0"
 description = "A simple CLI for sampling point clouds from large volumetric datasets"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
-license = { text = "MIT" }
-authors = [
-    { name = "Jakob Troidl" }
-]
+license = "MIT"
+authors = [{ name = "Jakob Troidl" }]
 dependencies = [
     "click",
     "volara",
     "pocaduck",
 ]
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
 
 [project.scripts]
 nps = "nps.main:main"
 
-[project.classifiers]
-# List as separate strings
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License"
-]
+[tool.setuptools.packages.find]
+include = ["nps"]
