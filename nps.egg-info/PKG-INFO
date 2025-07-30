@@ -1,0 +1,18 @@
+Metadata-Version: 2.4
+Name: nps
+Version: 0.1.0
+Summary: A simple CLI for sampling point clouds from large volumetric datasets
+Author: Jakob Troidl
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: click
+Requires-Dist: volara
+Requires-Dist: pocaduck
+Dynamic: author
+Dynamic: classifier
+Dynamic: description-content-type
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
