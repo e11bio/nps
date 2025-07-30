@@ -1,6 +1,5 @@
 volara_logs/**
 nps.egg-info/**
 nps_output/**
-build/**
+**/build
 **/__pycache__/
-
