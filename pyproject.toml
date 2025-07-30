@@ -19,6 +19,9 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 
+[project.entry-points."volara.blockwise_tasks"]
+sample-points = "nps.blockwise:SamplePoints"
+
 [project.scripts]
 nps = "nps.main:main"
 

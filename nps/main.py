@@ -3,7 +3,7 @@ import numpy as np
 import click
 import time
 
-from volara_contrib.blockwise import SamplePoints
+from nps.blockwise.sample_points import SamplePoints
 from volara.datasets import CloudVolumeWrapper
 from volara.workers import LSFWorker, LocalWorker, SlurmWorker
 
@@ -14,7 +14,7 @@ from volara.workers import LSFWorker, LocalWorker, SlurmWorker
 @click.option('--sample_svids', is_flag=True, default=False,
               help='Sample SVIDs in addition to points (default: False).')
 
-@click.option('--output-dir', '-o', default='./nps_output', show_default=True,
+@click.option('--output-dir', '-o', default='./nps_output_v2', show_default=True,
               type=click.Path(file_okay=False, writable=True), help='Output directory.')
 
 @click.option('--worker-type', default='LocalWorker', show_default=True,
@@ -23,7 +23,7 @@ from volara.workers import LSFWorker, LocalWorker, SlurmWorker
               help='Number of workers for blockwise sampling.')
 @click.option('--cpus-per-worker', default=4, show_default=True, type=int,
               help='Number of CPUs per worker.')
-@click.option('--queue', default='default', show_default=True, help='Queue name (for LSF backend).')
+@click.option('--queue', default='local', show_default=True, help='Queue name (for LSF backend).')
 @click.option('--fraction', default=1.0, show_default=True, type=float,
               help='Fraction of blocks to sample (0.0 - 1.0).')
 
@@ -64,7 +64,7 @@ def main(cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queu
         num_workers=num_workers,
         out_dir=output_dir,
         fraction=fraction,
-        # worker_config=worker_config
+        worker_config=worker_config
     )
 
     click.echo("Running task...")
