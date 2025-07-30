@@ -30,12 +30,7 @@ from volara.workers import LSFWorker, LocalWorker, SlurmWorker
 @click.option('--block-size', nargs=3, type=int, default=(256, 256, 256), show_default=True,
               help='Block size in voxels (X Y Z).')
 def main(cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queue, fraction, block_size, sample_svids, worker_type):
-    """
-    CLI tool for blockwise point cloud sampling using Volara.
 
-    Example:
-      nps --cv-path /data/cv --mip 0 --output-dir ./results --num-workers 16 --cpus-per-worker 4 --fraction 0.001
-    """
     click.echo(f"Reading CloudVolume at {cv_path} (mip={mip}, timestamp={timestamp})")
 
     labels_name = os.path.dirname(output_dir) + "_labels"
@@ -74,7 +69,7 @@ def main(cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queu
 
     click.echo("Running task...")
     task.drop()
-    task.run_blockwise(multiprocessing=False)
+    task.run_blockwise(multiprocessing=True)
     click.secho("✅ Done!", fg='green')
 
 
