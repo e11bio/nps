@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nps"
+version = "0.1.0"
+description = "A simple CLI for sampling point clouds from large volumetric datasets"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "Jakob Troidl" }
+]
+dependencies = [
+    "click",
+    "volara",
+    "pocaduck",
+]
+
+[project.scripts]
+nps = "nps.main:main"
+
+[project.classifiers]
+# List as separate strings
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License"
+]
