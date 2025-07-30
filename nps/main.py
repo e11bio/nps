@@ -10,25 +10,15 @@ from volara.workers import LSFWorker, LocalWorker, SlurmWorker
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('--cv-path', required=True, help='Path to CloudVolume data.')
 @click.option('--mip', default=0, type=int, show_default=True, help='MIP level to use.')
-@click.option('--timestamp', default=int(time.time()), help='Optional timestamp for the dataset version.')
-@click.option('--sample_svids', is_flag=True, default=False,
-              help='Sample SVIDs in addition to points (default: False).')
-
-@click.option('--output-dir', '-o', default='./nps_output_v2', show_default=True,
-              type=click.Path(file_okay=False, writable=True), help='Output directory.')
-
-@click.option('--worker-type', default='LocalWorker', show_default=True,
-              type=click.Choice(['LocalWorker', 'LSFWorker', 'SlurmWorker'], case_sensitive=True), help='Type of worker to use for sampling.')
-@click.option('--num-workers', default=8, show_default=True, type=int,
-              help='Number of workers for blockwise sampling.')
-@click.option('--cpus-per-worker', default=4, show_default=True, type=int,
-              help='Number of CPUs per worker.')
+@click.option('--timestamp', default=int(time.time()), help='Optional timestamp for the dataset version (graphene only).')
+@click.option('--sample_svids', is_flag=True, default=False, help='Sample SVIDs in addition to points (default: False).')
+@click.option('--output-dir', '-o', default='./nps_output', show_default=True, type=click.Path(file_okay=False, writable=True), help='Output directory.')
+@click.option('--worker-type', default='LocalWorker', show_default=True, type=click.Choice(['LocalWorker', 'LSFWorker', 'SlurmWorker'], case_sensitive=True), help='Type of worker to use for sampling.')
+@click.option('--num-workers', default=8, show_default=True, type=int, help='Number of workers for blockwise sampling.')
+@click.option('--cpus-per-worker', default=4, show_default=True, type=int, help='Number of CPUs per worker.')
 @click.option('--queue', default='local', show_default=True, help='Queue name (for LSF backend).')
-@click.option('--fraction', default=1.0, show_default=True, type=float,
-              help='Fraction of blocks to sample (0.0 - 1.0).')
-
-@click.option('--block-size', nargs=3, type=int, default=(256, 256, 256), show_default=True,
-              help='Block size in voxels (X Y Z).')
+@click.option('--fraction', default=0.001, show_default=True, type=float, help='Fraction of points to sample [0.0, 1.0].')
+@click.option('--block-size', nargs=3, type=int, default=(128, 128, 128), show_default=True, help='Block size in voxels (X Y Z).')
 def main(cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queue, fraction, block_size, sample_svids, worker_type):
 
     click.echo(f"Reading CloudVolume at {cv_path} (mip={mip}, timestamp={timestamp})")
