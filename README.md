@@ -61,3 +61,10 @@ query.close()
 ```
 
 For optimized point cloud reading, consider [this](https://github.com/JaneliaSciComp/pocaduck?tab=readme-ov-file#running-the-optimization-pipeline).
+
+
+### Deploy
+```python
+python -m build
+twine upload dist/*
+```
