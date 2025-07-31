@@ -34,8 +34,9 @@ def main(cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queu
         click.echo("Sampling points only (no SVIDs)...")
         svids = None
 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    points_dir = os.path.join(output_dir, 'points')
+    if not os.path.exists(points_dir):
+        os.makedirs(points_dir)
 
     if worker_type == 'LocalWorker':
         click.echo("Using LocalWorker for sampling.")
@@ -52,7 +53,7 @@ def main(cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queu
         svids=svids,
         block_size=np.array(block_size),
         num_workers=num_workers,
-        out_dir=output_dir,
+        out_dir=points_dir,
         fraction=fraction,
         worker_config=worker_config
     )

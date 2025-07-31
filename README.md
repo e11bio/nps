@@ -5,9 +5,8 @@ pip install nps-cli
 ````
 ### Get started
 
-
 ```zsh
-(nps-v2) ➜  nps git:(main) ✗ nps --help
+nps --help
 Usage: nps [OPTIONS]
 
 Options:
@@ -33,6 +32,32 @@ Options:
   -h, --help                      Show this message and exit.
 ```
 
+### Example usage
+
 ```bash
 nps --cv-path precomputed://gs://neuroglancer-janelia-flyem-hemibrain/v1.0/segmentation
 ```
+
+### Reading Point Clouds
+
+Please refer to the [pocaduck](https://github.com/JaneliaSciComp/pocaduck?tab=readme-ov-file#querying-point-clouds) repo on how to read point clouds from the output directory:
+
+```python
+from pocaduck import Query
+
+# Create a query object
+query = Query(storage_config=<PATH>) # path to folder where nps output is stored
+
+# Get all available labels
+labels = query.get_labels()
+print(f"Available labels: {labels}")
+
+# Get all points for a label (aggregated across all blocks)
+points = query.get_points(label=12345)
+print(f"Retrieved {points.shape[0]} points for label 12345")
+
+# Close the query connection when done
+query.close()
+```
+
+For optimized point cloud reading, consider [this](https://github.com/JaneliaSciComp/pocaduck?tab=readme-ov-file#running-the-optimization-pipeline).
