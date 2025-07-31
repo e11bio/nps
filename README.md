@@ -8,7 +8,7 @@
 
 
 
-# CLI for Point Cloud Sampling
+# CLI for Distributed Point Cloud Sampling
 
 ```
 pip install nps-cli
@@ -25,7 +25,7 @@ Options:
   --timestamp INTEGER             Optional timestamp for the dataset version
                                   (graphene only).
   --sample_svids                  Sample SVIDs in addition to points (default:
-                                  False).
+                                  False) Graphene only.
   -o, --output-dir DIRECTORY      Output directory.  [default: ./nps_output]
   --worker-type [LocalWorker|LSFWorker|SlurmWorker]
                                   Type of worker to use for sampling.
