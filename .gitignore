@@ -4,3 +4,4 @@ nps_output/**
 **/build
 **/__pycache__/
 **/dist/
+**/.ruff_cache/
