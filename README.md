@@ -1,3 +1,13 @@
+[![pypi](https://badge.fury.io/py/nps-cli.svg)](https://badge.fury.io/py/nps-cli)
+[![Python Version](https://img.shields.io/pypi/pyversions/nps-cli.svg)](https://pypi.org/project/nps-cli/)
+
+
+
+
+
+
+
+
 # CLI for Point Cloud Sampling
 
 ```
