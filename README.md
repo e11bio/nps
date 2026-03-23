@@ -1,13 +1,6 @@
 [![pypi](https://badge.fury.io/py/nps-cli.svg)](https://badge.fury.io/py/nps-cli)
 [![Python Version](https://img.shields.io/pypi/pyversions/nps-cli.svg)](https://pypi.org/project/nps-cli/)
 
-
-
-
-
-
-
-
 # CLI for Distributed Point Cloud Sampling
 
 ```
@@ -37,6 +30,8 @@ Options:
                                   local]
   --fraction FLOAT                Fraction of points to sample [0.0, 1.0].
                                   [default: 0.001]
+  --bbox INTEGER...               Bounding box: begin_x begin_y begin_z
+                                  end_x end_y end_z (in voxels).
   --block-size INTEGER...         Block size in voxels (X Y Z).  [default:
                                   128, 128, 128]
   -h, --help                      Show this message and exit.
@@ -46,6 +41,12 @@ Options:
 
 ```bash
 nps --cv-path precomputed://gs://neuroglancer-janelia-flyem-hemibrain/v1.0/segmentation
+```
+
+Sample point clouds within a FlyEM Hemibrain subvolume: 
+
+```bash
+nps --cv-path precomputed://gs://neuroglancer-janelia-flyem-hemibrain/v1.0/segmentation --bbox 15347 19712 18606 15859 20224 19118 --fraction 0.01
 ```
 
 ### Reading Point Clouds

@@ -19,7 +19,8 @@ from volara.workers import LSFWorker, LocalWorker, SlurmWorker
 @click.option('--queue', default='local', show_default=True, help='Queue name (for LSF backend).')
 @click.option('--fraction', default=0.001, show_default=True, type=float, help='Fraction of points to sample [0.0, 1.0].')
 @click.option('--block-size', nargs=3, type=int, default=(128, 128, 128), show_default=True, help='Block size in voxels (X Y Z).')
-def main(cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queue, fraction, block_size, sample_svids, worker_type):
+@click.option('--bbox', nargs=6, type=int, default=None, help='Bounding box: begin_x begin_y begin_z end_x end_y end_z (in voxels).')
+def main(cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queue, fraction, block_size, sample_svids, worker_type, bbox):
 
     click.echo(f"Reading CloudVolume at {cv_path} (mip={mip}, timestamp={timestamp})")
 
@@ -48,6 +49,13 @@ def main(cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queu
         click.echo(f"Using SlurmWorker with queue '{queue}' and {cpus_per_worker} CPUs per worker.")
         worker_config = SlurmWorker(queue=queue, num_cpus=cpus_per_worker)
 
+    roi = None
+    if bbox is not None:
+        begin = bbox[:3]
+        end = bbox[3:]
+        shape = tuple(e - b for b, e in zip(begin, end))
+        roi = (begin, shape)
+
     task = SamplePoints(
         labels=labels,
         svids=svids,
@@ -55,7 +63,8 @@ def main(cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queu
         num_workers=num_workers,
         out_dir=points_dir,
         fraction=fraction,
-        worker_config=worker_config
+        worker_config=worker_config,
+        roi=roi,
     )
 
     click.echo("Running task...")
