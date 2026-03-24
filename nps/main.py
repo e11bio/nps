@@ -22,6 +22,8 @@ from volara.workers import LSFWorker, LocalWorker, SlurmWorker
 @click.option('--bbox', nargs=6, type=int, default=None, help='Bounding box: begin_x begin_y begin_z end_x end_y end_z (in voxels).')
 def main(cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queue, fraction, block_size, sample_svids, worker_type, bbox):
 
+    output_dir = os.path.abspath(output_dir)
+
     click.echo(f"Reading CloudVolume at {cv_path} (mip={mip}, timestamp={timestamp})")
 
     labels_name = os.path.dirname(output_dir) + "_labels"
