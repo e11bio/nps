@@ -36,7 +36,7 @@ sample-points = "nps.blockwise:SamplePoints"
 nps = "nps.main:main"
 
 [tool.setuptools.packages.find]
-include = ["nps"]
+include = ["nps*"]
 
 [tool.ruff]
 exclude = ["dist", "build", "nps.egg-info", "volara_logs", "nps_output"]
