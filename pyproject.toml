@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nps-cli"
-version = "0.1.2"
+version = "0.1.3"
 description = "A simple CLI for sampling point clouds from large volumetric datasets"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
