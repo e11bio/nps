@@ -24,25 +24,21 @@ from volara.workers import LSFWorker, LocalWorker, SlurmWorker
 def main(cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queue, fraction, block_size, sample_svids, worker_type, bbox, fill_missing):
 
     output_dir = os.path.abspath(output_dir)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    points_dir = os.path.join(output_dir, 'points')
+    os.makedirs(points_dir, exist_ok=True)
 
     click.echo(f"Reading CloudVolume at {cv_path} (mip={mip}, timestamp={timestamp})")
 
-    labels_name = os.path.basename(output_dir) + "_labels"
-    labels = CloudVolumeWrapper(data_name=labels_name, store=cv_path, mip=mip, timestamp=timestamp, fill_missing=fill_missing)
+    base = os.path.basename(output_dir)
+    common = dict(store=cv_path, mip=mip, timestamp=timestamp, fill_missing=fill_missing)
+    labels = CloudVolumeWrapper(data_name=base + "_labels", **common)
 
     if sample_svids:
         click.echo("Sampling SVIDs in addition to points...")
-        svids_name = os.path.basename(output_dir) + "_svids"
-        svids = CloudVolumeWrapper(data_name=svids_name, store=cv_path, mip=mip, timestamp=timestamp, agglomerate=False, fill_missing=fill_missing)
+        svids = CloudVolumeWrapper(data_name=base + "_svids", agglomerate=False, **common)
     else:
         click.echo("Sampling points only (no SVIDs)...")
         svids = None
-
-    points_dir = os.path.join(output_dir, 'points')
-    if not os.path.exists(points_dir):
-        os.makedirs(points_dir)
 
     if worker_type == 'LocalWorker':
         click.echo("Using LocalWorker for sampling.")
