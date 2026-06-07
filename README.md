@@ -19,6 +19,7 @@ Options:
                                   (graphene only).
   --sample_svids                  Sample SVIDs in addition to points (default:
                                   False) Graphene only.
+  --fill-missing                  Returns 0 for missing chunks, if not set, EmptyVolumeException will be thrown for missing chunks 
   -o, --output-dir DIRECTORY      Output directory.  [default: ./nps_output]
   --worker-type [LocalWorker|LSFWorker|SlurmWorker]
                                   Type of worker to use for sampling.
