@@ -49,34 +49,10 @@ Sample point clouds within a FlyEM Hemibrain subvolume:
 nps --cv-path precomputed://gs://neuroglancer-janelia-flyem-hemibrain/v1.0/segmentation --bbox 15347 19712 18606 15859 20224 19118 --fraction 0.01
 ```
 
-### Example LSF Job Submission
+### Example
 
 ```
-RUN_NAME="flywire_example"
-QUEUE="local"
-
-CV_PATH="graphene://https://prod.flywire-daf.com/segmentation/1.0/flywire_public/"
-MIP=0
-TIMESTAMP=1562100638
-OUTPUT_DIR="${PWD}/flywire_public/${TIMESTAMP}"
-NUM_WORKERS=16
-FRACTION=0.01
-
-mkdir -p ./logs
-
-bsub -J "${RUN_NAME}" \
-    -n 2 \
-    -q "${QUEUE}" \
-    -o ./logs/${RUN_NAME}.log \
-    nps --cv-path "${CV_PATH}" \
-        --mip "${MIP}" \
-        --timestamp "${TIMESTAMP}" \
-        --output-dir "${OUTPUT_DIR}" \
-        --sample_svids \
-        --worker-type LSFWorker \
-        --queue "${QUEUE}" \
-        --num-workers "${NUM_WORKERS}" \
-        --fraction "${FRACTION}"
+./examples/scripts/liconn_local.sh
 ```
 
 ### Reading Point Clouds
