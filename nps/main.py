@@ -12,6 +12,7 @@ from volara.workers import LSFWorker, LocalWorker, SlurmWorker
 @click.option('--mip', default=0, type=int, show_default=True, help='MIP level to use.')
 @click.option('--timestamp', default=int(time.time()), help='Optional timestamp for the dataset version (graphene only).')
 @click.option('--sample_svids', is_flag=True, default=False, help='Sample SVIDs in addition to points (default: False).')
+@click.option('--fill-missing', is_flag=True, default=False, help='Accomodates downloading missing tiles (default: False).')
 @click.option('--output-dir', '-o', default='./nps_output', show_default=True, type=click.Path(file_okay=False, writable=True), help='Output directory.')
 @click.option('--worker-type', default='LocalWorker', show_default=True, type=click.Choice(['LocalWorker', 'LSFWorker', 'SlurmWorker'], case_sensitive=True), help='Type of worker to use for sampling.')
 @click.option('--num-workers', default=8, show_default=True, type=int, help='Number of workers for blockwise sampling.')
@@ -20,19 +21,21 @@ from volara.workers import LSFWorker, LocalWorker, SlurmWorker
 @click.option('--fraction', default=0.001, show_default=True, type=float, help='Fraction of points to sample [0.0, 1.0].')
 @click.option('--block-size', nargs=3, type=int, default=(128, 128, 128), show_default=True, help='Block size in voxels (X Y Z).')
 @click.option('--bbox', nargs=6, type=int, default=None, help='Bounding box: begin_x begin_y begin_z end_x end_y end_z (in voxels).')
-def main(cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queue, fraction, block_size, sample_svids, worker_type, bbox):
+def main(cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queue, fraction, block_size, sample_svids, worker_type, bbox, fill_missing):
 
     output_dir = os.path.abspath(output_dir)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     click.echo(f"Reading CloudVolume at {cv_path} (mip={mip}, timestamp={timestamp})")
 
-    labels_name = os.path.dirname(output_dir) + "_labels"
-    labels = CloudVolumeWrapper(data_name=labels_name, store=cv_path, mip=mip, timestamp=timestamp)
+    labels_name = os.path.basename(output_dir) + "_labels"
+    labels = CloudVolumeWrapper(data_name=labels_name, store=cv_path, mip=mip, timestamp=timestamp, fill_missing=fill_missing)
 
     if sample_svids:
         click.echo("Sampling SVIDs in addition to points...")
-        svids_name = os.path.dirname(output_dir) + "_svids"
-        svids = CloudVolumeWrapper(data_name=svids_name, store=cv_path, mip=mip, timestamp=timestamp, agglomerate=False)
+        svids_name = os.path.basename(output_dir) + "_svids"
+        svids = CloudVolumeWrapper(data_name=svids_name, store=cv_path, mip=mip, timestamp=timestamp, agglomerate=False, fill_missing=fill_missing)
     else:
         click.echo("Sampling points only (no SVIDs)...")
         svids = None

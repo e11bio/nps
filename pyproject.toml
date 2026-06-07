@@ -12,7 +12,7 @@ license = "MIT"
 authors = [{ name = "Jakob Troidl" }]
 dependencies = [
     "click",
-    "volara",
+    "volara @ git+https://github.com/AI-HHMI/volara.git@jakob-expose-fill-missing",
     "pocaduck",
 ]
 
