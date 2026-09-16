@@ -19,6 +19,7 @@ class SamplePoints(BlockwiseTask):
     out_dir: str
     labels: CloudVolumeWrapper
     svids: CloudVolumeWrapper | None = None
+    block_mask: str | None = None
     block_size: PydanticCoordinate
     fraction: float
     fit: Literal["shrink"] = "shrink"
@@ -50,6 +51,28 @@ class SamplePoints(BlockwiseTask):
 
     def drop_artifacts(self):
         pass
+
+    def check_block_func(self):
+        """
+        Daisy calls this in the scheduler before dispatching a block; returning
+        True means "already done". If a block mask is given, report empty blocks
+        as done so they are never sent to a worker.
+        """
+        base = super().check_block_func()
+        if self.block_mask is None:
+            return base
+
+        mask = np.load(self.block_mask)
+        roi_begin = np.array(self.write_roi.begin)
+        block_size = np.array(self.block_size)
+
+        def check_block(block: Block) -> bool:
+            index = (np.array(block.write_roi.begin) - roi_begin) // block_size
+            if not mask[tuple(index)]:
+                return True
+            return base(block)
+
+        return check_block
 
     @property
     def output_datasets(self) -> list[Dataset]:
@@ -90,14 +113,15 @@ class SamplePoints(BlockwiseTask):
             supervoxels = self.svids.array("r")
 
         def process_block(block: Block):
-            labels = data[block.write_roi.to_slices()]
-            labels = np.array(labels).squeeze()
+            # Index with the Roi (world/absolute voxel coords), not with
+            # to_slices(): numpy-style keys on a funlib Array are zero-based and
+            # would read from the wrong place on volumes with a voxel offset.
+            labels = np.asarray(data[block.write_roi]).squeeze()
 
             offset = block.write_roi.get_begin()
 
             if self.svids is not None:
-                s = supervoxels[block.write_roi.to_slices()]
-                s = np.array(s).squeeze()
+                s = np.asarray(supervoxels[block.write_roi]).squeeze()
                 assert s.shape == labels.shape, (
                     f"label block {labels.shape} and svid block {s.shape} differ in "
                     f"{block.write_roi}; the label and supervoxel volumes must share "

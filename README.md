@@ -39,6 +39,13 @@ Options:
                                   [default: 0.001]
   --bbox INTEGER...               Bounding box: begin_x begin_y begin_z
                                   end_x end_y end_z (in voxels).
+  --skip-empty / --no-skip-empty  Pre-scan a coarse mip to find blocks without
+                                  labels and skip them.  [default: skip-empty]
+  --mask-mip INTEGER              Mip level used for the empty-block pre-scan.
+                                  [default: coarsest available]
+  --block-mask FILE               Reuse an existing block_mask.npy from a
+                                  previous run with identical --bbox, --block-
+                                  size and --mip instead of re-scanning.
   --block-size INTEGER...         Block size in voxels (X Y Z).  [default:
                                   128, 128, 128]
   -h, --help                      Show this message and exit.
@@ -64,6 +71,10 @@ nps --cv-path precomputed://gs://<bucket>/segmentation/agglomerated \
 ```
 
 For graphene volumes, `--sample_svids` alone reads the supervoxels from the same store with `agglomerate=False`.
+
+### Skipping empty blocks
+
+Most of a volume's bounding box is usually empty, and reading a chunk from a (sharded) precomputed volume costs about the same however few voxels you ask for. By default `nps` therefore first scans the ROI at the coarsest mip, builds a per-block occupancy mask (saved as `block_mask.npy` in the output directory), and never dispatches empty blocks to workers. The mask is dilated by one block so thin structures lost in downsampling are still sampled. Pass `--no-skip-empty` to disable the scan, or `--block-mask <path>` to reuse a mask from an earlier run with the same `--bbox`, `--block-size` and `--mip`.
 
 ### Example
 
