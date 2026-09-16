@@ -14,11 +14,17 @@ Usage: nps [OPTIONS]
 
 Options:
   --cv-path TEXT                  Path to CloudVolume data.  [required]
+  --svid-cv-path TEXT             Separate CloudVolume path holding supervoxel
+                                  IDs (e.g. a precomputed watershed volume).
+                                  Implies SVID sampling. Must share the voxel
+                                  grid of --cv-path at the chosen mip.
   --mip INTEGER                   MIP level to use.  [default: 0]
   --timestamp INTEGER             Optional timestamp for the dataset version
                                   (graphene only).
   --sample_svids                  Sample SVIDs in addition to points (default:
-                                  False) Graphene only.
+                                  False). Without --svid-cv-path, supervoxels
+                                  are read from --cv-path with
+                                  agglomerate=False (graphene only).
   --fill-missing                  Returns 0 for missing chunks, if not set, EmptyVolumeException will be thrown for missing chunks 
   -o, --output-dir DIRECTORY      Output directory.  [default: ./nps_output]
   --worker-type [LocalWorker|LSFWorker|SlurmWorker]
@@ -50,10 +56,21 @@ Sample point clouds within a FlyEM Hemibrain subvolume:
 nps --cv-path precomputed://gs://neuroglancer-janelia-flyem-hemibrain/v1.0/segmentation --bbox 15347 19712 18606 15859 20224 19118 --fraction 0.01
 ```
 
+Sample points from an agglomerated volume and attach supervoxel IDs looked up in a separate precomputed volume (points are sampled from `--cv-path` only; `--svid-cv-path` is used for the per-point lookup):
+
+```bash
+nps --cv-path precomputed://gs://<bucket>/segmentation/agglomerated \
+    --svid-cv-path precomputed://gs://<bucket>/segmentation/supervoxels
+```
+
+For graphene volumes, `--sample_svids` alone reads the supervoxels from the same store with `agglomerate=False`.
+
 ### Example
 
 ```
-./examples/scripts/liconn_local.sh
+./examples/scripts/liconn_local.sh          # points only
+./examples/scripts/liconn_svids_local.sh    # points + SVIDs from a separate precomputed volume
+./examples/scripts/flywire_cluster.sh       # points + SVIDs from a graphene volume on LSF
 ```
 
 ### Reading Point Clouds

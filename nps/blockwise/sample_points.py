@@ -98,6 +98,11 @@ class SamplePoints(BlockwiseTask):
             if self.svids is not None:
                 s = supervoxels[block.write_roi.to_slices()]
                 s = np.array(s).squeeze()
+                assert s.shape == labels.shape, (
+                    f"label block {labels.shape} and svid block {s.shape} differ in "
+                    f"{block.write_roi}; the label and supervoxel volumes must share "
+                    "resolution and offset at the chosen mip"
+                )
             else:
                 s = None
 

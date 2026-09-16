@@ -9,9 +9,10 @@ from volara.workers import LSFWorker, LocalWorker, SlurmWorker
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('--cv-path', required=True, help='Path to CloudVolume data.')
+@click.option('--svid-cv-path', default=None, help='Separate CloudVolume path holding supervoxel IDs (e.g. a precomputed watershed volume). Implies SVID sampling. Must share the voxel grid of --cv-path at the chosen mip.')
 @click.option('--mip', default=0, type=int, show_default=True, help='MIP level to use.')
 @click.option('--timestamp', default=int(time.time()), help='Optional timestamp for the dataset version (graphene only).')
-@click.option('--sample_svids', is_flag=True, default=False, help='Sample SVIDs in addition to points (default: False).')
+@click.option('--sample_svids', is_flag=True, default=False, help='Sample SVIDs in addition to points (default: False). Without --svid-cv-path, supervoxels are read from --cv-path with agglomerate=False (graphene only).')
 @click.option('--fill-missing', is_flag=True, default=False, help='Accomodates downloading missing tiles (default: False).')
 @click.option('--output-dir', '-o', default='./nps_output', show_default=True, type=click.Path(file_okay=False, writable=True), help='Output directory.')
 @click.option('--worker-type', default='LocalWorker', show_default=True, type=click.Choice(['LocalWorker', 'LSFWorker', 'SlurmWorker'], case_sensitive=True), help='Type of worker to use for sampling.')
@@ -21,7 +22,7 @@ from volara.workers import LSFWorker, LocalWorker, SlurmWorker
 @click.option('--fraction', default=0.001, show_default=True, type=float, help='Fraction of points to sample [0.0, 1.0].')
 @click.option('--block-size', nargs=3, type=int, default=(128, 128, 128), show_default=True, help='Block size in voxels (X Y Z).')
 @click.option('--bbox', nargs=6, type=int, default=None, help='Bounding box: begin_x begin_y begin_z end_x end_y end_z (in voxels).')
-def main(cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queue, fraction, block_size, sample_svids, worker_type, bbox, fill_missing):
+def main(cv_path, svid_cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queue, fraction, block_size, sample_svids, worker_type, bbox, fill_missing):
 
     output_dir = os.path.abspath(output_dir)
     points_dir = os.path.join(output_dir, 'points')
@@ -30,12 +31,15 @@ def main(cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queu
     click.echo(f"Reading CloudVolume at {cv_path} (mip={mip}, timestamp={timestamp})")
 
     base = os.path.basename(output_dir)
-    common = dict(store=cv_path, mip=mip, timestamp=timestamp, fill_missing=fill_missing)
-    labels = CloudVolumeWrapper(data_name=base + "_labels", **common)
+    common = dict(mip=mip, timestamp=timestamp, fill_missing=fill_missing)
+    labels = CloudVolumeWrapper(data_name=base + "_labels", store=cv_path, **common)
 
-    if sample_svids:
-        click.echo("Sampling SVIDs in addition to points...")
-        svids = CloudVolumeWrapper(data_name=base + "_svids", agglomerate=False, **common)
+    if sample_svids or svid_cv_path:
+        svid_store = svid_cv_path or cv_path
+        click.echo(f"Sampling SVIDs in addition to points from {svid_store}...")
+        # agglomerate=False selects the watershed layer for graphene and is
+        # ignored by precomputed volumes, so one code path serves both cases.
+        svids = CloudVolumeWrapper(data_name=base + "_svids", store=svid_store, agglomerate=False, **common)
     else:
         click.echo("Sampling points only (no SVIDs)...")
         svids = None
