@@ -5,3 +5,4 @@ nps_output/**
 **/__pycache__/
 **/dist/
 **/.ruff_cache/
+logs/

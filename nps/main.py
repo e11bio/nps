@@ -1,9 +1,10 @@
+import faulthandler
 import os
 import numpy as np
 import click
 import time
 
-from nps.blockwise.sample_points import SamplePoints
+from nps.blockwise.sample_points import SamplePoints, consolidate_indexes
 from nps.blockwise.block_mask import compute_block_mask
 from funlib.geometry import Coordinate, Roi
 from volara.datasets import CloudVolumeWrapper
@@ -28,6 +29,10 @@ from volara.workers import LSFWorker, LocalWorker, SlurmWorker
 @click.option('--mask-mip', default=None, type=int, help='Mip level used for the empty-block pre-scan. [default: coarsest available]')
 @click.option('--block-mask', default=None, type=click.Path(exists=True, dir_okay=False), help='Reuse an existing block_mask.npy from a previous run with identical --bbox, --block-size and --mip instead of re-scanning.')
 def main(cv_path, svid_cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queue, fraction, block_size, sample_svids, worker_type, bbox, fill_missing, skip_empty, mask_mip, block_mask):
+
+    # On a native crash (segfault) dump every thread's Python stack to stderr so
+    # the cause shows up in the job log instead of a bare "exit code 139".
+    faulthandler.enable()
 
     output_dir = os.path.abspath(output_dir)
     points_dir = os.path.join(output_dir, 'points')
@@ -93,6 +98,8 @@ def main(cv_path, svid_cv_path, mip, timestamp, output_dir, num_workers, cpus_pe
     click.echo("Running task...")
     task.drop()
     task.run_blockwise(multiprocessing=True)
+    click.echo("Consolidating worker indexes...")
+    consolidate_indexes(points_dir)
     click.secho("✅ Done!", fg='green')
 
 

@@ -10,7 +10,7 @@ The mask is then used by :class:`SamplePoints` to skip empty blocks inside the
 daisy scheduler, so workers never touch them.
 """
 
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from itertools import product
 
 import numpy as np
@@ -21,12 +21,8 @@ from volara.datasets import CloudVolumeWrapper
 # Approximate edge length, in coarse voxels, of the region read per job.
 _TARGET_TILE_VOXELS = 128
 
-_coarse_vol: CloudVolume | None = None
-
-
-def _init_worker(store: str, mip: int, timestamp: int, agglomerate: bool):
-    global _coarse_vol
-    _coarse_vol = CloudVolume(
+def _open_coarse(store: str, mip: int, timestamp: int, agglomerate: bool) -> CloudVolume:
+    return CloudVolume(
         store,
         mip=mip,
         use_https=True,
@@ -39,7 +35,7 @@ def _init_worker(store: str, mip: int, timestamp: int, agglomerate: bool):
 
 def _tile_job(args):
     """Read one coarse tile and return which of its blocks are non-empty."""
-    tile_index, block_lo, block_hi, roi_begin, roi_end, block_size, factor = args
+    vol, tile_index, block_lo, block_hi, roi_begin, roi_end, block_size, factor = args
     block_lo, block_hi = np.array(block_lo), np.array(block_hi)
     roi_begin, roi_end = np.array(roi_begin), np.array(roi_end)
     block_size, factor = np.array(block_size), np.array(factor)
@@ -50,7 +46,7 @@ def _tile_job(args):
     coarse_lo = fine_lo // factor
     coarse_hi = -(-fine_hi // factor)  # ceil
     data = np.asarray(
-        _coarse_vol[tuple(slice(int(a), int(b)) for a, b in zip(coarse_lo, coarse_hi))]
+        vol[tuple(slice(int(a), int(b)) for a, b in zip(coarse_lo, coarse_hi))]
     ).squeeze(axis=-1)
 
     out = np.zeros(block_hi - block_lo, dtype=bool)
@@ -93,7 +89,10 @@ def compute_block_mask(
         block_size: Sampling block size in the same frame.
         mask_mip: Mip level to read for the occupancy check. Defaults to the
             coarsest mip available.
-        num_workers: Number of local processes reading coarse tiles.
+        num_workers: Number of threads reading coarse tiles. Reads are I/O and
+            decompression bound and release the GIL, so threads scale as well
+            as processes here while avoiding multiprocessing entirely (forked
+            and spawned pools both died with BrokenProcessPool on LSF nodes).
         dilate: Grow the mask by this many blocks in every direction. Guards
             against thin structures that vanish when downsampled.
     """
@@ -119,22 +118,22 @@ def compute_block_mask(
     )
     n_tiles = -(-n_blocks // blocks_per_tile)
 
+    coarse = _open_coarse(
+        str(labels.store), mask_mip, labels.timestamp, labels.agglomerate
+    )
     jobs = []
     for t in product(*(range(n) for n in n_tiles)):
         t = np.array(t)
         lo = t * blocks_per_tile
         hi = np.minimum(lo + blocks_per_tile, n_blocks)
         jobs.append(
-            (tuple(t), tuple(lo), tuple(hi), tuple(roi_begin), tuple(roi_end),
-             tuple(block_size), tuple(factor))
+            (coarse, tuple(t), tuple(lo), tuple(hi), tuple(roi_begin),
+             tuple(roi_end), tuple(block_size), tuple(factor))
         )
 
     mask = np.zeros(n_blocks, dtype=bool)
-    init_args = (str(labels.store), mask_mip, labels.timestamp, labels.agglomerate)
-    with ProcessPoolExecutor(
-        max_workers=num_workers, initializer=_init_worker, initargs=init_args
-    ) as pool:
-        for _, (tile_index, sub) in enumerate(pool.map(_tile_job, jobs, chunksize=4)):
+    with ThreadPoolExecutor(max_workers=num_workers) as pool:
+        for tile_index, sub in pool.map(_tile_job, jobs):
             lo = np.array(tile_index) * blocks_per_tile
             mask[tuple(slice(a, a + n) for a, n in zip(lo, sub.shape))] = sub
 

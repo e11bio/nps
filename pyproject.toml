@@ -12,6 +12,10 @@ license = "MIT"
 authors = [{ name = "Jakob Troidl" }]
 dependencies = [
     "click",
+    # 12.13.x passes the nominal chunk size instead of the real cutout size to
+    # the compressed_segmentation decoder for sharded chunks; partial chunks at
+    # the volume edge then segfault (fixed again in 12.14).
+    "cloud-volume!=12.13.*",
     "volara @ git+https://github.com/AI-HHMI/volara.git@jakob-expose-fill-missing",
     "pocaduck",
 ]
