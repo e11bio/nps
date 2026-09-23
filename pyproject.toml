@@ -16,7 +16,8 @@ dependencies = [
     # the compressed_segmentation decoder for sharded chunks; partial chunks at
     # the volume edge then segfault (fixed again in 12.14).
     "cloud-volume!=12.13.*",
-    "volara @ git+https://github.com/AI-HHMI/volara.git@jakob-expose-fill-missing",
+    # Pinned to an exact commit of the AI-HHMI fork
+    "volara @ git+https://github.com/AI-HHMI/volara.git@e99542764b377c058d7b90cbfab10eeb09ccb1ea",
     "pocaduck",
 ]
 

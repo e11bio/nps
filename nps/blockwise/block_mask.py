@@ -21,6 +21,7 @@ from volara.datasets import CloudVolumeWrapper
 # Approximate edge length, in coarse voxels, of the region read per job.
 _TARGET_TILE_VOXELS = 128
 
+
 def _open_coarse(store: str, mip: int, timestamp: int, agglomerate: bool) -> CloudVolume:
     return CloudVolume(
         store,

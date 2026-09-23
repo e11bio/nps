@@ -1,14 +1,16 @@
 import faulthandler
 import os
-import numpy as np
-import click
 import time
 
-from nps.blockwise.sample_points import SamplePoints, consolidate_indexes
-from nps.blockwise.block_mask import compute_block_mask
+import click
+import numpy as np
 from funlib.geometry import Coordinate, Roi
 from volara.datasets import CloudVolumeWrapper
 from volara.workers import LSFWorker, LocalWorker, SlurmWorker
+
+from nps.blockwise.block_mask import compute_block_mask
+from nps.blockwise.sample_points import SamplePoints, consolidate_indexes
+
 
 @click.command(context_settings=dict(help_option_names=['-h', '--help']))
 @click.option('--cv-path', required=True, help='Path to CloudVolume data.')
@@ -16,19 +18,20 @@ from volara.workers import LSFWorker, LocalWorker, SlurmWorker
 @click.option('--mip', default=0, type=int, show_default=True, help='MIP level to use.')
 @click.option('--timestamp', default=int(time.time()), help='Optional timestamp for the dataset version (graphene only).')
 @click.option('--sample_svids', is_flag=True, default=False, help='Sample SVIDs in addition to points (default: False). Without --svid-cv-path, supervoxels are read from --cv-path with agglomerate=False (graphene only).')
-@click.option('--fill-missing', is_flag=True, default=False, help='Accomodates downloading missing tiles (default: False).')
+@click.option('--fill-missing', is_flag=True, default=False, help='Return 0 for missing chunks instead of raising an error (default: False).')
 @click.option('--output-dir', '-o', default='./nps_output', show_default=True, type=click.Path(file_okay=False, writable=True), help='Output directory.')
+@click.option('--overwrite', is_flag=True, default=False, help='Delete points from an earlier run in --output-dir before sampling (default: False).')
 @click.option('--worker-type', default='LocalWorker', show_default=True, type=click.Choice(['LocalWorker', 'LSFWorker', 'SlurmWorker'], case_sensitive=True), help='Type of worker to use for sampling.')
 @click.option('--num-workers', default=8, show_default=True, type=int, help='Number of workers for blockwise sampling.')
 @click.option('--cpus-per-worker', default=4, show_default=True, type=int, help='Number of CPUs per worker.')
-@click.option('--queue', default='local', show_default=True, help='Queue name (for LSF backend).')
+@click.option('--queue', default='local', show_default=True, help='Queue name (LSF/Slurm backends).')
 @click.option('--fraction', default=0.001, show_default=True, type=float, help='Fraction of points to sample [0.0, 1.0].')
 @click.option('--block-size', nargs=3, type=int, default=(128, 128, 128), show_default=True, help='Block size in voxels (X Y Z).')
 @click.option('--bbox', nargs=6, type=int, default=None, help='Bounding box: begin_x begin_y begin_z end_x end_y end_z (in voxels).')
 @click.option('--skip-empty/--no-skip-empty', default=True, show_default=True, help='Pre-scan a coarse mip to find blocks without labels and skip them.')
 @click.option('--mask-mip', default=None, type=int, help='Mip level used for the empty-block pre-scan. [default: coarsest available]')
 @click.option('--block-mask', default=None, type=click.Path(exists=True, dir_okay=False), help='Reuse an existing block_mask.npy from a previous run with identical --bbox, --block-size and --mip instead of re-scanning.')
-def main(cv_path, svid_cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queue, fraction, block_size, sample_svids, worker_type, bbox, fill_missing, skip_empty, mask_mip, block_mask):
+def main(cv_path, svid_cv_path, mip, timestamp, output_dir, num_workers, cpus_per_worker, queue, fraction, block_size, sample_svids, worker_type, bbox, fill_missing, skip_empty, mask_mip, block_mask, overwrite):
 
     # On a native crash (segfault) dump every thread's Python stack to stderr so
     # the cause shows up in the job log instead of a bare "exit code 139".
@@ -36,6 +39,15 @@ def main(cv_path, svid_cv_path, mip, timestamp, output_dir, num_workers, cpus_pe
 
     output_dir = os.path.abspath(output_dir)
     points_dir = os.path.join(output_dir, 'points')
+    # Every run re-samples all blocks, so points left over from an earlier run
+    # would end up as duplicates. Check before the (slow) empty-block pre-scan.
+    if os.path.isdir(points_dir) and os.listdir(points_dir):
+        if not overwrite:
+            raise click.UsageError(
+                f"{points_dir} already holds points from an earlier run. "
+                "Pass --overwrite to delete them or choose another --output-dir."
+            )
+        click.echo(f"--overwrite: deleting points from an earlier run in {points_dir}")
     os.makedirs(points_dir, exist_ok=True)
 
     click.echo(f"Reading CloudVolume at {cv_path} (mip={mip}, timestamp={timestamp})")
@@ -66,10 +78,8 @@ def main(cv_path, svid_cv_path, mip, timestamp, output_dir, num_workers, cpus_pe
 
     roi = None
     if bbox is not None:
-        begin = bbox[:3]
-        end = bbox[3:]
-        shape = tuple(e - b for b, e in zip(begin, end))
-        roi = (begin, shape)
+        begin, end = bbox[:3], bbox[3:]
+        roi = (begin, tuple(e - b for b, e in zip(begin, end)))
 
     if block_mask is None and skip_empty:
         total_roi = labels.array("r").roi
@@ -96,7 +106,7 @@ def main(cv_path, svid_cv_path, mip, timestamp, output_dir, num_workers, cpus_pe
     )
 
     click.echo("Running task...")
-    task.drop()
+    task.drop()  # also deletes points_dir (see SamplePoints.drop_artifacts)
     task.run_blockwise(multiprocessing=True)
     click.echo("Consolidating worker indexes...")
     consolidate_indexes(points_dir)

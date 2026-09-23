@@ -6,7 +6,8 @@
 # Both volumes share the same grid at mip 0 (16x16x40 nm, offset 5100 1440 16),
 # which --svid-cv-path requires. The label snapshot is agglomerated, the
 # watershed volume holds the supervoxels (every supervoxel maps to exactly one
-# label). Swap LABEL_NAME for flywire_v141_m783 to sample the 2023 snapshot.
+# label). Sample the 2023 snapshot instead with
+#   LABEL_NAME=flywire_v141_m783 ./flywire_cluster.sh
 #
 # Run from an LSF submit host (e.g. a cluster login node). The driver is
 # submitted with bsub; it schedules the blocks and submits every worker as its
@@ -14,7 +15,6 @@
 # WORKER_TYPE=LocalWorker to run everything on the current machine instead.
 set -euo pipefail
 
-RUN_NAME="sampling_flywire_v141_m783_$(openssl rand -hex 2)"
 CHARGE_CODE="miaai"
 QUEUE="local"
 WORKER_TYPE="${WORKER_TYPE:-LSFWorker}"
@@ -29,15 +29,16 @@ NPS_ENV="/groups/troidl/home/troidlj/miniconda3/envs/nps"
 export PATH="${NPS_ENV}/bin:${PATH}"
 
 DATA_ROOT="/groups/troidl/troidllab/shape_reasoning"
-LABEL_NAME="flywire_v141_m783"
+LABEL_NAME="${LABEL_NAME:-flywire_v141_initial}"
 SVID_NAME="ws_190410_FAFB_v02_ws_size_threshold_200"
+RUN_NAME="sampling_${LABEL_NAME}_$(openssl rand -hex 2)"
 
 CV_PATH="precomputed://file://${DATA_ROOT}/${LABEL_NAME}"
 SVID_CV_PATH="precomputed://file://${DATA_ROOT}/${SVID_NAME}"
 MIP=0
 OUTPUT_DIR="${DATA_ROOT}/${LABEL_NAME}_points_v3"
 
-# Workers are single-threaded (~0.7 s per 128^3 block), so scale by count
+# Workers are single-threaded (~0.7 s per 128^3 block), so scale by count.
 NUM_WORKERS=64
 CPUS_PER_WORKER=1
 FRACTION=0.01
@@ -62,8 +63,8 @@ NPS_CMD=(nps --cv-path "${CV_PATH}"
     --fraction "${FRACTION}"
     "${MASK_ARGS[@]}")
 
-# Every run re-samples all blocks, so points left over from an earlier run in
-# the same directory would end up as duplicates.
+# nps refuses to write into an OUTPUT_DIR that already holds points (unless
+# --overwrite is given); check here too so we fail before submitting to LSF.
 if compgen -G "${OUTPUT_DIR}/points/worker_*" > /dev/null; then
     echo "ERROR: ${OUTPUT_DIR}/points already holds output of an earlier run." >&2
     echo "Delete it or change OUTPUT_DIR before starting a new run." >&2

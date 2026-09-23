@@ -6,3 +6,4 @@ nps_output/**
 **/dist/
 **/.ruff_cache/
 logs/
+examples/

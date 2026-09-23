@@ -1,22 +1,31 @@
+import glob
+import logging
+import os
+import shutil
+import uuid
 from contextlib import contextmanager
 from typing import Literal
 
-import numpy as np
-import os
-import glob
-import uuid
-import logging
 import daisy
 import duckdb
+import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
-
+from daisy import Block
 from funlib.geometry import Coordinate, Roi
 from volara.blockwise import BlockwiseTask
-from volara.datasets import Dataset, CloudVolumeWrapper
+from volara.datasets import CloudVolumeWrapper, Dataset
 from volara.utils import PydanticCoordinate
-from daisy import Block
+
+_INDEX_SCHEMA = """
+    CREATE TABLE IF NOT EXISTS {name} (
+        label UBIGINT,
+        block_id VARCHAR,
+        file_path VARCHAR,
+        point_count UBIGINT
+    )
+"""
 
 
 class SamplePoints(BlockwiseTask):
@@ -41,7 +50,6 @@ class SamplePoints(BlockwiseTask):
             total_roi = total_roi.intersect(self.roi)
         return total_roi
 
-
     @property
     def voxel_size(self) -> Coordinate:
         return self.labels.voxel_size
@@ -55,7 +63,8 @@ class SamplePoints(BlockwiseTask):
         return Coordinate((0,) * self.write_size.dims)
 
     def drop_artifacts(self):
-        pass
+        # init() recreates the directory when the task is run.
+        shutil.rmtree(self.out_dir, ignore_errors=True)
 
     def check_block_func(self):
         """
@@ -218,16 +227,6 @@ class _PointWriter:
         con.register("new_rows", index)
         con.execute("INSERT INTO point_cloud_index SELECT * FROM new_rows")
         con.close()
-
-
-_INDEX_SCHEMA = """
-    CREATE TABLE IF NOT EXISTS {name} (
-        label UBIGINT,
-        block_id VARCHAR,
-        file_path VARCHAR,
-        point_count UBIGINT
-    )
-"""
 
 
 def consolidate_indexes(out_dir: str) -> str:
