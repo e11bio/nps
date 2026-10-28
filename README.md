@@ -3,7 +3,7 @@
 
 # nps: distributed point cloud sampling
 
-`nps` samples point clouds of every segment in a large segmentation volumes
+`nps` samples point clouds of every segment in a large segmentation volume
 * Compatible with [CloudVolume](https://github.com/seung-lab/cloud-volume) (precomputed or graphene).
 * It processes the volume blockwise on local, LSF or Slurm workers and writes the points in [pocaduck](https://github.com/JaneliaSciComp/pocaduck) format.
 
